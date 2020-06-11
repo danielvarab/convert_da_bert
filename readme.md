@@ -14,35 +14,46 @@ Find the Danish BERT (recently renamed nordic BERT) model trained by BotXO [here
 # Install the huggingface library and tensorflow to convert
 pip install transformers
 pip install tensorflow
+conda install pytorch torchvision cpuonly -c pytorch
 
-# Below replace UNZIPPED_BERT_FOLDER with the unzipped folder downloaded from BotXO and PYTORCH_MODEL_FOLDER with the created output folder (e.g. `bert-base-danish-uncased-v1 or `bert-base-danish-uncased-v2)
+# download botxo's danish model (v2).
+# this was the dropbox link as of 11/6/2020
+wget https://www.dropbox.com/s/19cjaoqvv2jicq9/danish_bert_uncased_v2.zip\?dl\=1
+
+# unzip model. The zip includes a folder called 'danish_bert_uncased_v2'
+unzip danish_bert_uncased_v2.zip
+
+# output directory
+mkdir bert-base-danish-uncased-v2
 
 # Note that there are multiple bert_model.ckpt files (don't mistakenly include the suffixes.)
 transformers-cli convert \
     --model_type bert \
-    --tf_checkpoint UNZIPPED_BERT_FOLDER/bert_model.ckpt \
-    --config UNZIPPED_BERT_FOLDER/bert_config.json \
-    --pytorch_dump_output PYTORCH_MODEL_FOLDER/pytorch_model.bin
+    --tf_checkpoint danish_bert_uncased_v2/bert_model.ckpt \
+    --config danish_bert_uncased_v2/bert_config.json \
+    --pytorch_dump_output bert-base-danish-uncased-v2/pytorch_model.bin
 
 # Copy the BERT configuration and vocabulary to the output folder
-cp UNZIPPED_BERT_FOLDER/bert_config.json PYTORCH_MODEL_FOLDER/config.json
-cp UNZIPPED_BERT_FOLDER/vocab.txt PYTORCH_MODEL_FOLDER/
+cp danish_bert_uncased_v2/bert_config.json bert-base-danish-uncased-v2/config.json
+cp danish_bert_uncased_v2/vocab.txt bert-base-danish-uncased-v2/
 
 ```
 
 ## Using the model for MaskedLM
 ```python
 import torch
-import transformers
+from transformers import AutoModel, AutoTokenizer
 
 # Assuming the output folder above was "bert-base-danish-uncased-v2", and the folder is located in the same directory.
 MODEL_FOLDER = "bert-base-danish-uncased-v2"
 
-model = transformers.BertForMaskedLM.from_pretrained(MODEL_FOLDER)
-tokenizer = transformers.BertTokenizer.from_pretrained(MODEL_FOLDER)
+model = AutoTokenizer.from_pretrained(MODEL_FOLDER)
+tokenizer = AutoModel.from_pretrained(MODEL_FOLDER)
 _ = model.eval()
 
 txt = "[CLS] Jeg [MASK] dig . [SEP]"
+tokens = tokenizer.tokenize(txt)
+
 mask_index = tokens.index("[MASK]")
 
 indexed_tokens = tokenizer.convert_tokens_to_ids(tokens)
